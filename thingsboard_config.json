@@ -1,0 +1,4 @@
+{
+  "access_token": "YOUR_THINGSBOARD_ACCESS_TOKEN",
+  "server_url": "http://thingsboard.cloud"
+}
