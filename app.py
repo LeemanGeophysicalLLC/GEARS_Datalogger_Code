@@ -150,6 +150,7 @@ class DataLoggerApp:
             return
 
         self.running = True
+        self.start_button.config(text="Stop Logging")
         self.status_label.config(text="Logging... Rows Logged: 0", bg="green")
         self.logged_rows = 0
 
@@ -166,7 +167,7 @@ class DataLoggerApp:
 
     def stop_logging(self):
         self.running = False
-        self.logged_rows = 0
+        self.start_button.config(text="Start Logging")
         self.status_label.config(text="Not Logging", bg="red")
         self.filename_label.config(text="")
         if hasattr(self, 'log_fp'):
