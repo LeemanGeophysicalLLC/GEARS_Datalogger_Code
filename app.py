@@ -15,6 +15,7 @@ SEND_TELEMETRY = True
 DATA_DIR = os.path.expanduser("~/Desktop/data")
 CHANNELS = ["AIN0", "AIN1", "AIN2", "AIN3"]
 THINGSBOARD_HOST = "http://thingsboard.cloud"  # Replace if using local instance
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 LOGGING_RATES = {
     "1 Hz (1 sec)": 1,
@@ -39,7 +40,7 @@ except Exception as e:
 # Load ThingsBoard access token
 if SEND_TELEMETRY:
     try:
-        with open("config.json") as f:
+        with open(os.path.join(SCRIPT_DIR, "config.json")) as f:
             config = json.load(f)
             ACCESS_TOKEN = config["access_token"]
             TB_URL = f"{THINGSBOARD_HOST}/api/v1/{ACCESS_TOKEN}/telemetry"
