@@ -14,8 +14,7 @@ DEV_MODE = False
 SEND_TELEMETRY = True
 DATA_DIR = os.path.expanduser("~/Desktop/data")
 CHANNELS = ["AIN0", "AIN1", "AIN2", "AIN3"]
-THINGSBOARD_HOST = "http://thingsboard.cloud"  # Replace if using local instance
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+THINGSBOARD_HOST = "http://thingsboard.cloud"
 
 LOGGING_RATES = {
     "1 Hz (1 sec)": 1,
@@ -25,6 +24,9 @@ LOGGING_RATES = {
     "Every 5 min": 300,
     "Every 10 min": 600
 }
+
+# Handle relative path for config.json
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 try:
     from labjack import ljm
@@ -37,7 +39,6 @@ except Exception as e:
     print(f"[Warning] Failed to connect to LabJack T7: {e}")
     sys.exit()
 
-# Load ThingsBoard access token
 if SEND_TELEMETRY:
     try:
         with open(os.path.join(SCRIPT_DIR, "config.json")) as f:
@@ -62,7 +63,7 @@ class DataLoggerApp:
         self.update_voltage_display()
 
     def create_widgets(self):
-        default_font = ("Helvetica", 14)
+        default_font = ("Helvetica", 16)
 
         main_frame = tk.Frame(self.root, bg="#333333")
         main_frame.pack(padx=10, pady=10)
@@ -73,34 +74,36 @@ class DataLoggerApp:
         right_frame = tk.Frame(main_frame, bg="#333333")
         right_frame.grid(row=0, column=1, padx=40, sticky="n")
 
-        tk.Label(left_frame, text="Select Channels to Log:", font=("Helvetica", 16, "bold"), fg="white", bg="#333333").pack(anchor="w")
+        tk.Label(left_frame, text="Select Channels to Log:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w")
         self.channel_states = {}
         for ch in CHANNELS:
             self.channel_states[ch] = False
-            btn = tk.Button(left_frame, text=ch, font=("Helvetica", 18), width=10,
+            btn = tk.Button(left_frame, text=ch, font=("Helvetica", 20), width=10,
                             command=lambda ch=ch: self.toggle_channel(ch),
                             bg="#004400", fg="black", activeforeground="black")
             btn.pack(pady=5)
             self.channel_buttons[ch] = btn
 
-        tk.Label(left_frame, text="Logging Rate:", font=("Helvetica", 16, "bold"), fg="white", bg="#333333").pack(anchor="w", pady=(10, 0))
+        tk.Label(left_frame, text="Logging Rate:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w", pady=(10, 0))
         self.rate_var = tk.StringVar(value="1 Hz (1 sec)")
-        rate_menu = ttk.Combobox(
-            left_frame,
-            textvariable=self.rate_var,
-            values=list(LOGGING_RATES.keys()),
-            state="readonly",
-            font=("Helvetica", 18)
-        )
-        rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
-        rate_menu.configure(width=18)
-
-        rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
+        for rate in LOGGING_RATES:
+            tk.Radiobutton(
+                left_frame,
+                text=rate,
+                variable=self.rate_var,
+                value=rate,
+                font=("Helvetica", 18),
+                bg="#333333",
+                fg="white",
+                selectcolor="#444444",
+                activeforeground="white",
+                activebackground="#555555"
+            ).pack(anchor="w", padx=20, pady=2)
 
         self.status_label = tk.Label(
             right_frame,
             text="Not Logging",
-            font=("Helvetica", 14, "bold"),
+            font=("Helvetica", 16, "bold"),
             bg="red",
             fg="white",
             padx=10,
@@ -114,7 +117,7 @@ class DataLoggerApp:
         self.filename_label = tk.Label(
             right_frame,
             text="",
-            font=("Helvetica", 14),
+            font=("Helvetica", 16),
             fg="white",
             width=40,
             anchor="w",
@@ -122,7 +125,7 @@ class DataLoggerApp:
         )
         self.filename_label.pack(pady=(0, 10))
 
-        tk.Label(right_frame, text="Live Voltage Readings:", font=("Helvetica", 16, "bold"), fg="white", bg="#333333").pack(anchor="w")
+        tk.Label(right_frame, text="Live Voltage Readings:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w")
         for ch in CHANNELS:
             row = tk.Frame(right_frame, bg="#333333")
             row.pack(anchor="w", pady=2)
@@ -133,10 +136,24 @@ class DataLoggerApp:
             ent.pack(side="left")
             self.voltage_entries[ch] = ent
 
-        self.start_button = tk.Button(right_frame, text="Start Logging", command=self.toggle_logging, font=default_font, bg="#eeeeee", fg="black")
+        self.start_button = tk.Button(
+            right_frame,
+            text="Start Logging",
+            command=self.toggle_logging,
+            font=default_font,
+            bg="#eeeeee",
+            fg="black"
+        )
         self.start_button.pack(pady=(20, 10))
 
-        self.exit_button = tk.Button(right_frame, text="Exit", command=self.root.quit, font=default_font, bg="#eeeeee", fg="black")
+        self.exit_button = tk.Button(
+            right_frame,
+            text="Exit",
+            command=self.root.quit,
+            font=default_font,
+            bg="#eeeeee",
+            fg="black"
+        )
         self.exit_button.pack()
 
     def toggle_channel(self, ch):
@@ -193,7 +210,7 @@ class DataLoggerApp:
         if not SEND_TELEMETRY:
             return
         payload = {"timestamp": timestamp}
-        for i, ch in enumerate(["AIN0", "AIN1", "AIN2", "AIN3"]):
+        for i, ch in enumerate(CHANNELS):
             if ch in voltages and isinstance(voltages[ch], float):
                 payload[f"ain{i}"] = voltages[ch]
         try:
@@ -236,7 +253,6 @@ class DataLoggerApp:
             self.voltage_entries[ch].insert(0, str(val))
             self.voltage_entries[ch].config(state="readonly")
         self.root.after(1000, self.update_voltage_display)
-
 
 if __name__ == "__main__":
     root = tk.Tk()
