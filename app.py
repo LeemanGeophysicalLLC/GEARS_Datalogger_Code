@@ -22,7 +22,6 @@ LOGGING_RATES = {
     "Every 30 sec": 30,
     "Every 1 min": 60,
     "Every 5 min": 300,
-    "Every 10 min": 600
 }
 
 # Handle relative path for config.json
