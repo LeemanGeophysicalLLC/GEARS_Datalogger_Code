@@ -24,9 +24,9 @@ LOGGING_RATES = {
 }
 
 try:
-    import ljm
+    from labjack import ljm
     if not DEV_MODE:
-        handle = ljm.openS("T7", "USB", "0")
+        handle = ljm.openS("T7", "ANY", "ANY")
     else:
         handle = None
 except Exception as e:
