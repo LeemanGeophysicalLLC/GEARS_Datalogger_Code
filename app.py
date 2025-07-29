@@ -85,7 +85,16 @@ class DataLoggerApp:
 
         tk.Label(left_frame, text="Logging Rate:", font=("Helvetica", 16, "bold"), fg="white", bg="#333333").pack(anchor="w", pady=(10, 0))
         self.rate_var = tk.StringVar(value="1 Hz (1 sec)")
-        rate_menu = ttk.Combobox(left_frame, textvariable=self.rate_var, values=list(LOGGING_RATES.keys()), state="readonly", font=default_font)
+        rate_menu = ttk.Combobox(
+            left_frame,
+            textvariable=self.rate_var,
+            values=list(LOGGING_RATES.keys()),
+            state="readonly",
+            font=("Helvetica", 18)
+        )
+        rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
+        rate_menu.configure(width=18)
+
         rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
 
         self.status_label = tk.Label(
