@@ -77,8 +77,12 @@ class DataLoggerApp:
         self.exit_button = tk.Button(left_frame, text="Exit", command=self.root.quit, font=default_font)
         self.exit_button.pack(pady=(0, 10))
 
-        self.status_label = tk.Label(right_frame, text="Not Logging", font=("Helvetica", 14, "bold"), bg="red", fg="white", padx=10, pady=5, relief="sunken")
+        self.status_label = tk.Label(right_frame, text="Not Logging", font=("Helvetica", 14, "bold"),
+                                     bg="red", fg="white", padx=10, pady=5, relief="sunken")
         self.status_label.pack(pady=(0, 10))
+
+        self.filename_label = tk.Label(right_frame, text="", font=("Helvetica", 12), fg="gray")
+        self.filename_label.pack(pady=(0, 10))
 
         tk.Label(right_frame, text="Live Voltage Readings:", font=("Helvetica", 16, "bold")).pack(anchor="w")
         for ch in CHANNELS:
@@ -110,6 +114,7 @@ class DataLoggerApp:
 
         os.makedirs(DATA_DIR, exist_ok=True)
         self.log_file = self.get_next_log_filename()
+        self.filename_label.config(text=f"Writing to: {os.path.basename(self.log_file)}")
         self.log_fp = open(self.log_file, "w", newline="")
         self.csv_writer = csv.writer(self.log_fp)
         header = ["timestamp"] + self.selected_channels
@@ -121,7 +126,8 @@ class DataLoggerApp:
     def stop_logging(self):
         self.running = False
         self.enable_controls()
-        self.status_label.config(text=f"Stopped. Total Rows Logged: {self.logged_rows}", bg="red")
+        self.status_label.config(text="Not Logging", bg="red")
+        self.filename_label.config(text="")
         if hasattr(self, 'log_fp'):
             self.log_fp.close()
 
