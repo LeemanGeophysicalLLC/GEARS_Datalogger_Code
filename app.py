@@ -14,7 +14,7 @@ DEV_MODE = False
 SEND_TELEMETRY = True
 DATA_DIR = os.path.expanduser("~/Desktop/data")
 CHANNELS = ["AIN0", "AIN1", "AIN2", "AIN3"]
-THINGSBOARD_HOST = "http://demo.thingsboard.io"  # Replace if using local instance
+THINGSBOARD_HOST = "http://thingsboard.cloud"  # Replace if using local instance
 
 LOGGING_RATES = {
     "1 Hz (1 sec)": 1,
