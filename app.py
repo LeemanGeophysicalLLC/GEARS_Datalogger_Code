@@ -45,6 +45,8 @@ class DataLoggerApp:
         self.update_voltage_display()
 
     def create_widgets(self):
+        default_font = ("Helvetica", 14)
+
         main_frame = tk.Frame(self.root)
         main_frame.pack(padx=10, pady=10)
 
@@ -55,33 +57,35 @@ class DataLoggerApp:
         right_frame.grid(row=0, column=1, padx=40, sticky="n")
 
         self.check_vars = {}
-        tk.Label(left_frame, text="Select Channels to Log:").pack(anchor="w")
+        tk.Label(left_frame, text="Select Channels to Log:", font=default_font).pack(anchor="w")
         for ch in CHANNELS:
             var = tk.BooleanVar()
-            cb = tk.Checkbutton(left_frame, text=ch, variable=var)
+            cb = tk.Checkbutton(left_frame, text=ch, variable=var, font=default_font)
             cb.pack(anchor="w", padx=10)
             self.check_vars[ch] = var
+            cb._widget_ref = cb  # Save reference to enable/disable later
+            var._widget_ref = cb
 
-        tk.Label(left_frame, text="Logging Rate:").pack(anchor="w", pady=(10, 0))
+        tk.Label(left_frame, text="Logging Rate:", font=default_font).pack(anchor="w", pady=(10, 0))
         self.rate_var = tk.StringVar(value="1 Hz (1 sec)")
-        rate_menu = ttk.Combobox(left_frame, textvariable=self.rate_var, values=list(LOGGING_RATES.keys()), state="readonly")
+        rate_menu = ttk.Combobox(left_frame, textvariable=self.rate_var, values=list(LOGGING_RATES.keys()), state="readonly", font=default_font)
         rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
 
-        self.start_button = tk.Button(left_frame, text="Start Logging", command=self.toggle_logging)
+        self.start_button = tk.Button(left_frame, text="Start Logging", command=self.toggle_logging, font=default_font)
         self.start_button.pack(pady=(0, 10))
 
-        self.exit_button = tk.Button(left_frame, text="Exit", command=self.root.quit)
+        self.exit_button = tk.Button(left_frame, text="Exit", command=self.root.quit, font=default_font)
         self.exit_button.pack(pady=(0, 10))
 
-        self.status_label = tk.Label(right_frame, text="Not Logging")
+        self.status_label = tk.Label(right_frame, text="Not Logging", font=default_font)
         self.status_label.pack(pady=(0, 10))
 
-        tk.Label(right_frame, text="Live Voltage Readings:").pack(anchor="w")
+        tk.Label(right_frame, text="Live Voltage Readings:", font=default_font).pack(anchor="w")
         for ch in CHANNELS:
             row = tk.Frame(right_frame)
             row.pack(anchor="w", pady=2)
-            tk.Label(row, text=ch + ":", width=6, anchor="w").pack(side="left")
-            ent = tk.Entry(row, width=10, justify="right")
+            tk.Label(row, text=ch + ":", width=6, anchor="w", font=default_font).pack(side="left")
+            ent = tk.Entry(row, width=10, justify="right", font=default_font)
             ent.insert(0, "N/A")
             ent.config(state="readonly")
             ent.pack(side="left")
@@ -122,6 +126,8 @@ class DataLoggerApp:
             self.log_fp.close()
 
     def disable_controls(self):
+        for ch in self.check_vars:
+            self.check_vars[ch]._widget_ref.config(state="disabled")
         self.start_button.config(text="Stop Logging")
         self.exit_button.config(state="disabled")
         for cb in self.check_vars.values():
@@ -132,6 +138,8 @@ class DataLoggerApp:
                     sub.config(state="disabled")
 
     def enable_controls(self):
+        for ch in self.check_vars:
+            self.check_vars[ch]._widget_ref.config(state="normal")
         self.start_button.config(text="Start Logging")
         self.exit_button.config(state="normal")
         for child in self.root.winfo_children():
@@ -183,6 +191,7 @@ class DataLoggerApp:
 
 if __name__ == "__main__":
     root = tk.Tk()
+    root.attributes("-fullscreen", True)
     app = DataLoggerApp(root)
     root.mainloop()
 
