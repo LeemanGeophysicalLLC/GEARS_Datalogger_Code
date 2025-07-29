@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import os
+import sys
 import csv
 import time
 import threading
@@ -28,9 +29,10 @@ try:
         handle = ljm.openS("T7", "USB", "0")
     else:
         handle = None
-except Exception:
+except Exception as e:
     handle = None
-    DEV_MODE = True
+    print(f"[Warning] Failed to connect to LabJack T7: {e}")
+    sys.exit()
 
 
 class DataLoggerApp:
@@ -77,11 +79,28 @@ class DataLoggerApp:
         self.exit_button = tk.Button(left_frame, text="Exit", command=self.root.quit, font=default_font)
         self.exit_button.pack(pady=(0, 10))
 
-        self.status_label = tk.Label(right_frame, text="Not Logging", font=("Helvetica", 14, "bold"),
-                                     bg="red", fg="white", padx=10, pady=5, relief="sunken")
+        self.status_label = tk.Label(
+            right_frame,
+            text="Not Logging",
+            font=("Helvetica", 14, "bold"),
+            bg="red",
+            fg="white",
+            padx=10,
+            pady=5,
+            relief="sunken",
+            width=30,
+            anchor="w"
+        )
         self.status_label.pack(pady=(0, 10))
 
-        self.filename_label = tk.Label(right_frame, text="", font=("Helvetica", 12), fg="gray")
+        self.filename_label = tk.Label(
+            right_frame,
+            text="",
+            font=("Helvetica", 14),
+            fg="white",
+            width=40,
+            anchor="w"
+        )
         self.filename_label.pack(pady=(0, 10))
 
         tk.Label(right_frame, text="Live Voltage Readings:", font=("Helvetica", 16, "bold")).pack(anchor="w")
@@ -109,7 +128,7 @@ class DataLoggerApp:
 
         self.running = True
         self.disable_controls()
-        self.status_label.config(text="Logging... Rows Logged: 0")
+        self.status_label.config(text="Logging... Rows Logged: 0", bg="green")
         self.logged_rows = 0
 
         os.makedirs(DATA_DIR, exist_ok=True)
@@ -126,6 +145,7 @@ class DataLoggerApp:
     def stop_logging(self):
         self.running = False
         self.enable_controls()
+        self.logged_rows = 0
         self.status_label.config(text="Not Logging", bg="red")
         self.filename_label.config(text="")
         if hasattr(self, 'log_fp'):
