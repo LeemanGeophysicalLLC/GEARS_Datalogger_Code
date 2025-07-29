@@ -40,40 +40,52 @@ class DataLoggerApp:
         self.running = False
         self.logged_rows = 0
         self.selected_channels = []
-        self.voltage_labels = {}
+        self.voltage_entries = {}
         self.create_widgets()
         self.update_voltage_display()
 
     def create_widgets(self):
+        main_frame = tk.Frame(self.root)
+        main_frame.pack(padx=10, pady=10)
+
+        left_frame = tk.Frame(main_frame)
+        left_frame.grid(row=0, column=0, sticky="n")
+
+        right_frame = tk.Frame(main_frame)
+        right_frame.grid(row=0, column=1, padx=40, sticky="n")
+
         self.check_vars = {}
-        tk.Label(self.root, text="Select Channels to Log:").pack(anchor="w", padx=10, pady=(10, 0))
+        tk.Label(left_frame, text="Select Channels to Log:").pack(anchor="w")
         for ch in CHANNELS:
             var = tk.BooleanVar()
-            cb = tk.Checkbutton(self.root, text=ch, variable=var)
-            cb.pack(anchor="w", padx=20)
+            cb = tk.Checkbutton(left_frame, text=ch, variable=var)
+            cb.pack(anchor="w", padx=10)
             self.check_vars[ch] = var
 
-        tk.Label(self.root, text="Logging Rate:").pack(anchor="w", padx=10, pady=(10, 0))
+        tk.Label(left_frame, text="Logging Rate:").pack(anchor="w", pady=(10, 0))
         self.rate_var = tk.StringVar(value="1 Hz (1 sec)")
-        rate_menu = ttk.Combobox(self.root, textvariable=self.rate_var, values=list(LOGGING_RATES.keys()), state="readonly")
-        rate_menu.pack(anchor="w", padx=20, pady=(0, 10))
+        rate_menu = ttk.Combobox(left_frame, textvariable=self.rate_var, values=list(LOGGING_RATES.keys()), state="readonly")
+        rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
 
-        self.start_button = tk.Button(self.root, text="Start Logging", command=self.toggle_logging)
+        self.start_button = tk.Button(left_frame, text="Start Logging", command=self.toggle_logging)
         self.start_button.pack(pady=(0, 10))
 
-        self.status_label = tk.Label(self.root, text="Not Logging")
-        self.status_label.pack()
+        self.exit_button = tk.Button(left_frame, text="Exit", command=self.root.quit)
+        self.exit_button.pack(pady=(0, 10))
 
-        self.voltage_frame = tk.Frame(self.root)
-        self.voltage_frame.pack(pady=(10, 10))
+        self.status_label = tk.Label(right_frame, text="Not Logging")
+        self.status_label.pack(pady=(0, 10))
 
+        tk.Label(right_frame, text="Live Voltage Readings:").pack(anchor="w")
         for ch in CHANNELS:
-            lbl = tk.Label(self.voltage_frame, text=f"{ch}: N/A")
-            lbl.pack()
-            self.voltage_labels[ch] = lbl
-
-        self.exit_button = tk.Button(self.root, text="Exit", command=self.root.quit)
-        self.exit_button.pack(pady=(10, 10))
+            row = tk.Frame(right_frame)
+            row.pack(anchor="w", pady=2)
+            tk.Label(row, text=ch + ":", width=6, anchor="w").pack(side="left")
+            ent = tk.Entry(row, width=10, justify="right")
+            ent.insert(0, "N/A")
+            ent.config(state="readonly")
+            ent.pack(side="left")
+            self.voltage_entries[ch] = ent
 
     def toggle_logging(self):
         if not self.running:
@@ -111,17 +123,21 @@ class DataLoggerApp:
 
     def disable_controls(self):
         self.start_button.config(text="Stop Logging")
+        self.exit_button.config(state="disabled")
         for cb in self.check_vars.values():
             cb.set(cb.get())
         for child in self.root.winfo_children():
-            if isinstance(child, tk.Checkbutton) or isinstance(child, ttk.Combobox):
-                child.config(state="disabled")
+            for sub in child.winfo_children():
+                if isinstance(sub, tk.Checkbutton) or isinstance(sub, ttk.Combobox):
+                    sub.config(state="disabled")
 
     def enable_controls(self):
         self.start_button.config(text="Start Logging")
+        self.exit_button.config(state="normal")
         for child in self.root.winfo_children():
-            if isinstance(child, tk.Checkbutton) or isinstance(child, ttk.Combobox):
-                child.config(state="normal")
+            for sub in child.winfo_children():
+                if isinstance(sub, tk.Checkbutton) or isinstance(sub, ttk.Combobox):
+                    sub.config(state="normal")
 
     def get_next_log_filename(self):
         existing = [f for f in os.listdir(DATA_DIR) if f.startswith("log") and f.endswith(".csv")]
@@ -157,10 +173,11 @@ class DataLoggerApp:
     def update_voltage_display(self):
         voltages = self.read_voltages()
         for ch in CHANNELS:
-            if ch in self.selected_channels:
-                self.voltage_labels[ch].config(text=f"{ch}: {voltages.get(ch, 'N/A')}")
-            else:
-                self.voltage_labels[ch].config(text=f"{ch}: N/A")
+            val = voltages.get(ch, "N/A") if ch in self.selected_channels else "N/A"
+            self.voltage_entries[ch].config(state="normal")
+            self.voltage_entries[ch].delete(0, tk.END)
+            self.voltage_entries[ch].insert(0, str(val))
+            self.voltage_entries[ch].config(state="readonly")
         self.root.after(1000, self.update_voltage_display)
 
 
