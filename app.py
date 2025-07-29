@@ -57,7 +57,7 @@ class DataLoggerApp:
         right_frame.grid(row=0, column=1, padx=40, sticky="n")
 
         self.check_vars = {}
-        tk.Label(left_frame, text="Select Channels to Log:", font=default_font).pack(anchor="w")
+        tk.Label(left_frame, text="Select Channels to Log:", font=("Helvetica", 16, "bold")).pack(anchor="w")
         for ch in CHANNELS:
             var = tk.BooleanVar()
             cb = tk.Checkbutton(left_frame, text=ch, variable=var, font=default_font)
@@ -66,7 +66,7 @@ class DataLoggerApp:
             cb._widget_ref = cb  # Save reference to enable/disable later
             var._widget_ref = cb
 
-        tk.Label(left_frame, text="Logging Rate:", font=default_font).pack(anchor="w", pady=(10, 0))
+        tk.Label(left_frame, text="Logging Rate:", font=("Helvetica", 16, "bold")).pack(anchor="w", pady=(10, 0))
         self.rate_var = tk.StringVar(value="1 Hz (1 sec)")
         rate_menu = ttk.Combobox(left_frame, textvariable=self.rate_var, values=list(LOGGING_RATES.keys()), state="readonly", font=default_font)
         rate_menu.pack(anchor="w", padx=10, pady=(0, 10))
@@ -77,10 +77,10 @@ class DataLoggerApp:
         self.exit_button = tk.Button(left_frame, text="Exit", command=self.root.quit, font=default_font)
         self.exit_button.pack(pady=(0, 10))
 
-        self.status_label = tk.Label(right_frame, text="Not Logging", font=default_font)
+        self.status_label = tk.Label(right_frame, text="Not Logging", font=("Helvetica", 14, "bold"), bg="red", fg="white", padx=10, pady=5, relief="sunken")
         self.status_label.pack(pady=(0, 10))
 
-        tk.Label(right_frame, text="Live Voltage Readings:", font=default_font).pack(anchor="w")
+        tk.Label(right_frame, text="Live Voltage Readings:", font=("Helvetica", 16, "bold")).pack(anchor="w")
         for ch in CHANNELS:
             row = tk.Frame(right_frame)
             row.pack(anchor="w", pady=2)
@@ -121,7 +121,7 @@ class DataLoggerApp:
     def stop_logging(self):
         self.running = False
         self.enable_controls()
-        self.status_label.config(text=f"Stopped. Total Rows Logged: {self.logged_rows}")
+        self.status_label.config(text=f"Stopped. Total Rows Logged: {self.logged_rows}", bg="red")
         if hasattr(self, 'log_fp'):
             self.log_fp.close()
 
@@ -161,7 +161,7 @@ class DataLoggerApp:
             row = [timestamp] + [voltages[ch] for ch in self.selected_channels]
             self.csv_writer.writerow(row)
             self.logged_rows += 1
-            self.status_label.config(text=f"Logging... Rows Logged: {self.logged_rows}")
+            self.status_label.config(text=f"Logging... Rows Logged: {self.logged_rows}", bg="green")
             self.log_fp.flush()
             time.sleep(interval)
 
