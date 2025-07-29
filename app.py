@@ -10,7 +10,6 @@ import requests
 from datetime import datetime
 import random
 
-# ==== Config ====
 DEV_MODE = False
 SEND_TELEMETRY = True
 DATA_DIR = os.path.expanduser("~/Desktop/data")
@@ -25,10 +24,9 @@ LOGGING_RATES = {
     "Every 5 min": 300,
 }
 
-# Get directory of the running script
-SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
+# Handle relative path for config.json
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Connect to LabJack
 try:
     from labjack import ljm
     if not DEV_MODE:
@@ -40,7 +38,6 @@ except Exception as e:
     print(f"[Warning] Failed to connect to LabJack T7: {e}")
     sys.exit()
 
-# Load ThingsBoard access token
 if SEND_TELEMETRY:
     try:
         with open(os.path.join(SCRIPT_DIR, "config.json")) as f:
@@ -65,8 +62,7 @@ class DataLoggerApp:
         self.update_voltage_display()
 
     def create_widgets(self):
-        font_large = ("Helvetica", 16)
-        font_button = ("Helvetica", 18)
+        default_font = ("Helvetica", 16)
 
         main_frame = tk.Frame(self.root, bg="#333333")
         main_frame.pack(padx=10, pady=10)
@@ -75,36 +71,38 @@ class DataLoggerApp:
         left_frame.grid(row=0, column=0, sticky="n")
 
         right_frame = tk.Frame(main_frame, bg="#333333")
-        right_frame.grid(row=0, column=1, padx=20, sticky="n")
+        right_frame.grid(row=0, column=1, padx=40, sticky="n")
 
-        tk.Label(left_frame, text="Select Channels:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w", pady=(0, 5))
+        tk.Label(left_frame, text="Select Channels to Log:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w")
         self.channel_states = {}
         for ch in CHANNELS:
             self.channel_states[ch] = False
-            btn = tk.Button(left_frame, text=ch, font=font_button, width=10,
-                            command=lambda ch=ch: self.toggle_channel(ch),
-                            bg="#004400", fg="black", activeforeground="black")
-            btn.pack(pady=2, ipady=4)
+            btn = tk.Button(
+                left_frame, text=ch, font=("Helvetica", 20), width=8, height=1,
+                command=lambda ch=ch: self.toggle_channel(ch),
+                bg="#004400", fg="black", activeforeground="black"
+            )
+            btn.pack(pady=2)
             self.channel_buttons[ch] = btn
 
         tk.Label(left_frame, text="Logging Rate:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w", pady=(10, 0))
         self.rate_var = tk.StringVar(value="1 Hz (1 sec)")
+        self.rate_radios = []
         for rate in LOGGING_RATES:
-            tk.Radiobutton(
+            rb = tk.Radiobutton(
                 left_frame,
                 text=rate,
                 variable=self.rate_var,
                 value=rate,
-                font=font_large,
+                font=("Helvetica", 16),
                 bg="#333333",
                 fg="white",
                 selectcolor="#444444",
                 activeforeground="white",
-                activebackground="#555555",
-                anchor="w",
-                width=20,
-                indicatoron=True
-            ).pack(anchor="w", padx=10, pady=1)
+                activebackground="#555555"
+            )
+            rb.pack(anchor="w", padx=20, pady=1)
+            self.rate_radios.append(rb)
 
         self.status_label = tk.Label(
             right_frame,
@@ -131,12 +129,12 @@ class DataLoggerApp:
         )
         self.filename_label.pack(pady=(0, 10))
 
-        tk.Label(right_frame, text="Live Voltages:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w")
+        tk.Label(right_frame, text="Live Voltage Readings:", font=("Helvetica", 18, "bold"), fg="white", bg="#333333").pack(anchor="w")
         for ch in CHANNELS:
             row = tk.Frame(right_frame, bg="#333333")
             row.pack(anchor="w", pady=2)
-            tk.Label(row, text=ch + ":", width=6, anchor="w", font=font_large, fg="white", bg="#333333").pack(side="left")
-            ent = tk.Entry(row, width=10, justify="right", font=font_large)
+            tk.Label(row, text=ch + ":", width=6, anchor="w", font=default_font, fg="white", bg="#333333").pack(side="left")
+            ent = tk.Entry(row, width=10, justify="right", font=default_font)
             ent.insert(0, "N/A")
             ent.config(state="readonly")
             ent.pack(side="left")
@@ -146,7 +144,7 @@ class DataLoggerApp:
             right_frame,
             text="Start Logging",
             command=self.toggle_logging,
-            font=font_large,
+            font=default_font,
             bg="#eeeeee",
             fg="black"
         )
@@ -156,7 +154,7 @@ class DataLoggerApp:
             right_frame,
             text="Exit",
             command=self.root.quit,
-            font=font_large,
+            font=default_font,
             bg="#eeeeee",
             fg="black"
         )
@@ -179,11 +177,14 @@ class DataLoggerApp:
     def start_logging(self):
         self.selected_channels = [ch for ch, state in self.channel_states.items() if state]
         if not self.selected_channels:
-            messagebox.showerror("No Channels Selected", "Please select at least one input to log.")
+            messagebox.showerror("No Channels Selected", "Please select at least one analog input to log.")
             return
 
         self.running = True
         self.start_button.config(text="Stop Logging")
+        self.exit_button.config(state="disabled")
+        for rb in self.rate_radios:
+            rb.config(state="disabled")
         self.status_label.config(text="Logging... Rows Logged: 0", bg="green")
         self.logged_rows = 0
 
@@ -201,6 +202,9 @@ class DataLoggerApp:
     def stop_logging(self):
         self.running = False
         self.start_button.config(text="Start Logging")
+        self.exit_button.config(state="normal")
+        for rb in self.rate_radios:
+            rb.config(state="normal")
         self.status_label.config(text="Not Logging", bg="red")
         self.filename_label.config(text="")
         if hasattr(self, 'log_fp'):
@@ -265,5 +269,6 @@ if __name__ == "__main__":
     root.attributes("-fullscreen", True)
     app = DataLoggerApp(root)
     root.mainloop()
+
     if handle and not DEV_MODE:
         ljm.close(handle)
